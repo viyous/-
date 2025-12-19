@@ -28,7 +28,7 @@ type includes<T extends Array,element extends T[number]> = T['length'] extends 0
 type next<List extends Array,element extends List[number]> = List['length'] extends 1 ? never : equal<element,List[0]> extends true ? getArrayTop<List,false>[0] :  next<getArrayTop<List,false>,element>
 
 //定义数字
-type TheNumber = ['1','2','3','4','5','6','7','8','9']
+type TheNumber = ['0','1','2','3','4','5','6','7','8','9']
 
 //可能的进位的数字
 type TheNumberTen = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19']
@@ -186,7 +186,135 @@ type removeZero<A extends string[]> = A['length'] extends 1 ? A : equal<A[0],'0'
  */
 type Multiply<a extends string,b extends string> = arrayToString<removeZero<invertArray<carryMultiply<invertArray<ForA<stringToArray<a>,stringToArray<b>>>>>>>
 
-displayType<Multiply<
-'283868538283383535353835883383868322820603886383838383838383835528386853828338353535383588338386832282060388638383838383838383553368282888333682828883',
-'4'>>
-()
+type If<A,B,false_value = false> = A extends true ? B : false_value
+
+type IfElse<A,V1,V2> = A extends true ? V1 : V2
+
+type And<A,B> = A extends true ? B extends true ? true : false : false
+
+type Or<A,B> = A extends true ? true : B extends true ? true : false
+
+type Not<A> = A extends true ? false : true
+
+/**
+ * 一位数，取出较大的那个
+ */
+type a_max<A extends TheNumber[number],B extends TheNumber[number],numbers extends TheNumberp = TheNumber> = equal<A,getArrayTop<numbers>> extends true ? B : equal<B,getArrayTop<numbers>> extends true ? A : a_max<A,B,getArrayTop<numbers,false>>
+/**
+ * 一位数，判断第一个数是否大于等于第一个数
+ */
+type a_is_max<A extends TheNumber[number],B extends TheNumber[number],strict extends boolean = true> = IfElse<strict,If<And<equal<a_max<A,B>,A>,Not<equal<A,B>>>,true,false>,equal<a_max<A,B>,A>>
+
+/**
+ * 多位数的逻辑
+ * 由于无法比较元组长度，所以只能递归到某元组为空
+ */
+type max<A extends TheNumber[number][],B extends TheNumber[number][],A_isBig extends boolean = true,lock extends boolean = false,AA = A,BB = B> = IfElse<And<equal<A['length'],0>,equal<B['length'],0>>,IfElse<A_isBig,AA,BB>,IfElse<And<equal<A['length'],0>,Not<equal<B['length'],0>>>,BB,And<equal<B['length'],0>,Not<equal<A['length'],0>>> extends true ? AA : max<getArrayTop<A,false>,getArrayTop<B,false>,IfElse<lock,A_isBig,a_is_max<A[0],B[0]>>,IfElse<lock,true,Not<equal<A[0],B[0]>>>,AA,BB>>>
+
+type Max<A extends string,B extends string> = arrayToString<max<stringToArray<A>,stringToArray<B>>>
+
+type isMax<A extends string,B extends number,strict extends boolean = true> = IfElse<strict,If<And<equal<A,Max<A,B>>,Not<equal<A,B>>>,true>,equal<A,Max<A,B>>>
+
+type slice<array extends Array = [],start = '0',end extends string = `${array['length']}`,result = []> = equal<start,end> extends true ? result : slice<array,Add<start,'1'>,end,[...result,array[start]]>
+
+type Next<n extends string|number> = Add<`${n}`,'1'>
+
+type match<array extends Array,element extends array[number],start = '0',isIndex extends boolean = true,result = []> = equal<array[start],element> extends true ? IfElse<isIndex,start,result> : match<array,element,Next<start>,isIndex,[...result,array[start]]>
+
+type pairing<
+array extends Array,
+start = '0',
+endstring = ')',
+result = [],
+success = '1',
+target = '0',
+startstring = array[start]> = 
+
+equal<success,target> extends true ? 
+[start,result] : 
+
+equal<array[Next<start>],startstring> extends true ? 
+
+pairing<array,Next<start>,endstring,[...result,array[Next<start>]],Next<success>,target,startstring> : 
+
+equal<array[Next<start>],endstring> extends true ? 
+
+pairing<array,Next<start>,endstring,equal<Next<target>,success> extends true ? result :
+
+[...result,array[Next<start>]],success,Next<target>,startstring> : 
+
+pairing<array,Next<start>,endstring,[...result,array[Next<start>]],success,target,startstring>
+
+type analysisStringToArray<
+T extends string[],
+array = [],
+start = '0',
+result = pairing<T,start>
+> = equal<Next<result[0]>,`${T['length']}`> extends true ? 
+[...array,arrayToString<result[1]>] : 
+analysisStringTo<T,[...array,arrayToString<result[1]>],Next<result[0]>>
+
+type findIndex<A,element,index = '0'> = equal<index,`${A['length']}`> extends true ? -1 : equal<A[index],element> extends true ? index : findIndex<A,element,Next<index>>
+
+type analysisArrayToObject<A,B> = {[key in A[number]]:B[findIndex<A,key>]}
+
+type RangeIn<value,min_value,max_value> = And<isMax<value,min_value,false>,isMax<max_value,value,false>>
+
+
+
+type Splice<
+A extends Array,
+start extends string = '0',
+end extends string = `${A['length']}`,
+add extends Array = [],
+result = [],
+deleteArray = [],
+index = '0'
+> = A[index] extends undefined ? [result,deleteArray] : equal<start,index> extends true ? Splice<A,start,end,add,[...result,...add],[A[start]],Next<index>> : 
+RangeIn<index,start,end> extends true ?
+Splice<A,start,end,add,result,[...deleteArray,A[index]],Next<index>> : Splice<A,start,end,add,[...result,A[index]],deleteArray,Next<index>>
+
+displayType<Splice<[0,1,2,3,4,5,6],'2','4',[7,8,9]>>()
+
+interface keyword {
+'+':{
+length:2
+}
+'output=>':{
+length:1
+}
+'let':{
+length:1
+}
+'top':{
+length:1
+}
+'up':{
+length:1
+}
+'down':{
+length:1
+}
+'<=':{
+length:1
+}
+}
+
+type variable = [{}]
+
+type typeNames = [
+'keyword',
+'functionStatement',
+'functionInvoke',
+'number',
+'object',
+'string',
+'variable'
+]
+
+type recognize<
+str extends string,
+Keyworld = keyword
+> = equal<Keyworld[str],any> extends true ? str extends `<(${infer data})>` ? 'array' : true : 'keyword'
+
+displayType<recognize<'<()()()()>'>>()
